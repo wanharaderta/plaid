@@ -17,15 +17,9 @@
 
 package io.plaidapp.core.data;
 
-import androidx.annotation.NonNull;
-import io.plaidapp.core.BuildConfig;
-import io.plaidapp.core.dribbble.data.search.DribbbleSearchConverter;
 import io.plaidapp.core.dribbble.data.search.DribbbleSearchService;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import okhttp3.logging.HttpLoggingInterceptor.Level;
-import retrofit2.Retrofit;
 
+import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class BaseDataManager<T> implements DataLoadingSubject {
 
     private final AtomicInteger loadingCount;
-    private DribbbleSearchService dribbbleSearchApi;
+    @Inject
+    DribbbleSearchService dribbbleSearchApi;
     private List<DataLoadingCallbacks> loadingCallbacks;
     private OnDataLoadedCallback<T> onDataLoadedCallback;
 
@@ -63,11 +58,6 @@ public abstract class BaseDataManager<T> implements DataLoadingSubject {
     @Override
     public boolean isDataLoading() {
         return loadingCount.get() > 0;
-    }
-
-    public DribbbleSearchService getDribbbleSearchApi() {
-        if (dribbbleSearchApi == null) createDribbbleSearchApi();
-        return dribbbleSearchApi;
     }
 
     @Override
@@ -126,27 +116,4 @@ public abstract class BaseDataManager<T> implements DataLoadingSubject {
             loadingCallback.dataFinishedLoading();
         }
     }
-
-    @Deprecated // Use Dagger
-    private void createDribbbleSearchApi() {
-        final OkHttpClient client = new OkHttpClient.Builder()
-                .addInterceptor(getHttpLoggingInterceptor())
-                .build();
-
-        dribbbleSearchApi = new Retrofit.Builder()
-                .baseUrl(DribbbleSearchService.ENDPOINT)
-                .addConverterFactory(new DribbbleSearchConverter.Factory())
-                .client(client)
-                .build()
-                .create((DribbbleSearchService.class));
-    }
-
-    @NonNull
-    private HttpLoggingInterceptor getHttpLoggingInterceptor() {
-        Level debugLevel = BuildConfig.DEBUG ? Level.BASIC : Level.NONE;
-        HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(debugLevel);
-        return loggingInterceptor;
-    }
-
 }
